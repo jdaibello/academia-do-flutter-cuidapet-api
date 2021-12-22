@@ -344,6 +344,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.1.2"
+  shelf_router_generator:
+    dependency: "direct dev"
+    description:
+      name: shelf_router_generator
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.1"
   shelf_web_socket:
     dependency: transitive
     description:

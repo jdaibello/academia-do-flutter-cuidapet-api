@@ -11,8 +11,8 @@ class DatabaseConnection implements IDatabaseConnection {
   DatabaseConnection(this._configuration);
 
   @override
-  Future<MySqlConnection> openConnection() {
-    return MySqlConnection.connect(ConnectionSettings(
+  Future<MySqlConnection> openConnection() async {
+    return await MySqlConnection.connect(ConnectionSettings(
       host: _configuration.host,
       port: _configuration.port,
       user: _configuration.user,
