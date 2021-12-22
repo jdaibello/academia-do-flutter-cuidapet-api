@@ -1,10 +1,10 @@
 import 'package:cuidapet_api/application/middlewares/middlewares.dart';
 import 'package:shelf/shelf.dart';
 
-class DefaultContentType extends Middlewares {
+class DefaultContentTypeMiddleware extends Middlewares {
   final String contentType;
 
-  DefaultContentType(this.contentType);
+  DefaultContentTypeMiddleware(this.contentType);
 
   @override
   Future<Response> execute(Request request) async {

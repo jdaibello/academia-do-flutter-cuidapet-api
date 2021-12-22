@@ -10,6 +10,7 @@ dependencies:
     dotenv: ^3.0.0
     get_it: ^7.2.0
     injectable: ^1.5.0
+    jaguar_jwt: ^3.0.0
     logger: ^1.1.0
     mysql1: ^0.19.2
     shelf: ^1.1.0
