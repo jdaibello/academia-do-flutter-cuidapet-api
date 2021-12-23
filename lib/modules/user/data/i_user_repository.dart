@@ -12,4 +12,5 @@ abstract class IUserRepository {
     String socialKey,
     String socialType,
   );
+  Future<void> updateUserDeviceTokenAndRefreshToken(User user);
 }

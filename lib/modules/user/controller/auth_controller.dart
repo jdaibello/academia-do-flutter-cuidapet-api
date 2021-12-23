@@ -89,5 +89,10 @@ class AuthController {
     }
   }
 
+  @Route('PATCH', '/confirm')
+  Future<Response> confirmLogin(Request request) async {
+    return Response.ok(jsonEncode(''));
+  }
+
   Router get router => _$AuthControllerRouter(this);
 }
