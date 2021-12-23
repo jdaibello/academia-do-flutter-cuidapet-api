@@ -11,6 +11,7 @@ class SecurityMiddleware extends Middlewares {
   final ILogger log;
   final skipUrl = <SecuritySkipUrl>[
     SecuritySkipUrl(url: '/auth/register', method: 'POST'),
+    SecuritySkipUrl(url: '/auth/', method: 'POST'),
   ];
 
   SecurityMiddleware(this.log);
