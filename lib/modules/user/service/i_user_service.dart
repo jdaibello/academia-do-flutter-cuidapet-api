@@ -8,4 +8,10 @@ abstract class IUserService {
     String password,
     bool supplierUser,
   );
+  Future<User> loginWithSocial(
+    String email,
+    String avatar,
+    String socialType,
+    String socialKey,
+  );
 }

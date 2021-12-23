@@ -36,8 +36,15 @@ class AuthController {
           loginViewModel.supplierUser,
         );
       } else {
+        // TODO: Need to fix "type 'Null' is not a subtype of type 'String' error
+
         // Social login (Facebook, Google, Apple, etc...)
-        user = User();
+        user = await userService.loginWithSocial(
+          loginViewModel.login,
+          loginViewModel.avatar,
+          loginViewModel.socialType,
+          loginViewModel.socialKey,
+        );
       }
 
       return Response.ok(

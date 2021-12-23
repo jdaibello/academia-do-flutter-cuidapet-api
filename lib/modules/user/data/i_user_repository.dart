@@ -7,4 +7,9 @@ abstract class IUserRepository {
     String password,
     bool supplierUser,
   );
+  Future<User> loginByEmailAndSocialKey(
+    String email,
+    String socialKey,
+    String socialType,
+  );
 }
