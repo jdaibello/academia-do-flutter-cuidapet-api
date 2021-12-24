@@ -14,6 +14,7 @@ class UserConfirmInputModel extends IRequestMapping {
 
   @override
   void map() {
-    // TODO: implement map
+    iosDevideToken = data['ios_token'];
+    androidDeviceToken = data['android_token'];
   }
 }

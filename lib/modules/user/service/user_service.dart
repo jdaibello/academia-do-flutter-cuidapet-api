@@ -1,4 +1,5 @@
 import 'package:cuidapet_api/application/exceptions/user_not_found_exception.dart';
+import 'package:cuidapet_api/application/helpers/jwt_helper.dart';
 import 'package:cuidapet_api/application/logger/i_logger.dart';
 import 'package:cuidapet_api/entities/user.dart';
 import 'package:cuidapet_api/modules/user/data/i_user_repository.dart';
@@ -61,8 +62,17 @@ class UserService implements IUserService {
   }
 
   @override
-  Future<String> confirmLogin(UserConfirmInputModel inputModel) {
-    // TODO: implement confirmLogin
-    throw UnimplementedError();
+  Future<String> confirmLogin(UserConfirmInputModel inputModel) async {
+    final refreshToken = JwtHelper.refreshToken(inputModel.accessToken);
+
+    User user = User(
+      id: inputModel.userId,
+      refreshToken: refreshToken,
+      iosToken: inputModel.iosDevideToken,
+      androidToken: inputModel.androidDeviceToken,
+    );
+
+    await userRepository.updateUserDeviceTokenAndRefreshToken(user);
+    return refreshToken;
   }
 }
