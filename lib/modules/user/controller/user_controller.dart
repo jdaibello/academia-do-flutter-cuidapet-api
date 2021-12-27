@@ -5,6 +5,7 @@ import 'package:cuidapet_api/application/exceptions/user_not_found_exception.dar
 import 'package:cuidapet_api/application/logger/i_logger.dart';
 import 'package:cuidapet_api/modules/user/service/i_user_service.dart';
 import 'package:cuidapet_api/modules/user/view_models/update_url_avatar_view_model.dart';
+import 'package:cuidapet_api/modules/user/view_models/user_update_device_token_input_model.dart';
 import 'package:injectable/injectable.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
@@ -73,6 +74,24 @@ class UserController {
           {'message': 'Error while updating avatar'},
         ),
       );
+    }
+  }
+
+  @Route.put('/device')
+  Future<Response> updateDeviceToken(Request request) async {
+    try {
+      final userId = int.parse(request.headers['user']!);
+
+      final updateDeviceToken = UserUpdateDeviceTokenInputModel(
+        userId: userId,
+        dataRequest: await request.readAsString(),
+      );
+
+      await userService.updateDeviceToken(updateDeviceToken);
+      return Response.ok(jsonEncode({}));
+    } catch (e, s) {
+      log.error('Error when updating device token', e, s);
+      return Response.internalServerError();
     }
   }
 
