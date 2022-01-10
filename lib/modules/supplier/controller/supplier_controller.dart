@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:cuidapet_api/application/logger/i_logger.dart';
@@ -60,13 +59,52 @@ class SupplierController {
 
   @Route.get('/<id|[0-9]+>')
   Future<Response> findById(Request request, String id) async {
-    final supplier = await service.findById(int.parse(id));
+    try {
+      final supplier = await service.findById(int.parse(id));
 
-    if (supplier == null) {
-      return Response.ok(jsonEncode({}));
+      if (supplier == null) {
+        return Response.ok(jsonEncode({}));
+      }
+
+      return Response.ok(_supplierMapper(supplier));
+    } catch (e, s) {
+      log.error('Error when finding supplier by id', e, s);
+      return Response.internalServerError(
+        body: jsonEncode(
+          {'message': 'Error when finding supplier by id'},
+        ),
+      );
     }
+  }
 
-    return Response.ok(_supplierMapper(supplier));
+  @Route.get('/<supplierId|[0-9]+>/services')
+  Future<Response> findServicesBySupplierId(
+    Request request,
+    String supplierId,
+  ) async {
+    try {
+      final supplierServices = await service.findServicesBySupplier(
+        int.parse(supplierId),
+      );
+
+      final result = supplierServices
+          .map((s) => {
+                'id': s.id,
+                'supplier_id': s.supplierId,
+                'name': s.name,
+                'price': s.price,
+              })
+          .toList();
+
+      return Response.ok(jsonEncode(result));
+    } catch (e, s) {
+      log.error('Error when finding services', e, s);
+      return Response.internalServerError(
+        body: jsonEncode(
+          {'message': 'Error when finding services'},
+        ),
+      );
+    }
   }
 
   String _supplierMapper(Supplier supplier) {
