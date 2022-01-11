@@ -20,4 +20,26 @@ class Supplier {
     this.longitude,
     this.category,
   });
+
+  Supplier copyWith({
+    int? id,
+    String? name,
+    String? logo,
+    String? address,
+    String? phone,
+    double? latitude,
+    double? longitude,
+    Category? category,
+  }) {
+    return Supplier(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      logo: logo ?? this.logo,
+      address: address ?? this.address,
+      phone: phone ?? this.phone,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      category: category ?? this.category,
+    );
+  }
 }

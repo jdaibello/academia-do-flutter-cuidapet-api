@@ -68,8 +68,8 @@ class UserRepository implements IUserRepository {
       conn = await connection.openConnection();
       var query = '''
         SELECT * 
-        FROM usuario
-        WHERE email = ? AND senha = ?
+        FROM usuario 
+        WHERE email = ? AND senha = ? 
       ''';
 
       if (supplierUser) {
