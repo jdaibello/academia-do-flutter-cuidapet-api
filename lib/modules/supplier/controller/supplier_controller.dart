@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:cuidapet_api/application/logger/i_logger.dart';
 import 'package:cuidapet_api/entities/supplier.dart';
 import 'package:cuidapet_api/modules/supplier/service/i_supplier_service.dart';
+import 'package:cuidapet_api/modules/supplier/view_models/create_supplier_user_view_model.dart';
 import 'package:injectable/injectable.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
@@ -121,6 +122,23 @@ class SupplierController {
 
     final emailExists = await service.checkUserEmailExists(email);
     return emailExists ? Response(200) : Response(204);
+  }
+
+  @Route.post('/user')
+  Future<Response> createNewUser(Request request) async {
+    try {
+      final model = CreateSupplierUserViewModel(await request.readAsString());
+      await service.createUserSupplier(model);
+
+      return Response.ok(jsonEncode({}));
+    } catch (e, s) {
+      log.error('Error when registering a new supplier and user', e, s);
+      return Response.internalServerError(
+        body: jsonEncode(
+          {'message', 'Error when registering a new supplier and user'},
+        ),
+      );
+    }
   }
 
   String _supplierMapper(Supplier supplier) {
