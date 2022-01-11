@@ -40,7 +40,8 @@ class SupplierRepository implements ISupplierRepository {
               )
             ) AS distancia 
             FROM fornecedor f 
-            HAVING distancia <= $distance;
+            HAVING distancia <= $distance 
+            ORDER BY distancia;
           ''';
       final result = await conn.query(query);
 
@@ -187,6 +188,63 @@ class SupplierRepository implements ISupplierRepository {
       return result.insertId!;
     } on MySqlException catch (e, s) {
       log.error('Error when registering a new user', e, s);
+      throw DatabaseException();
+    } finally {
+      await conn?.close();
+    }
+  }
+
+  @override
+  Future<Supplier> update(Supplier supplier) async {
+    MySqlConnection? conn;
+
+    try {
+      conn = await connection.openConnection();
+
+      await conn.query(
+        '''
+          UPDATE fornecedor 
+          SET 
+            nome = ?, 
+            logo = ?, 
+            endereco = ?, 
+            telefone = ?, 
+            latlng = ST_GeomfromText(?), 
+            categorias_fornecedor_id = ? 
+          WHERE 
+            id = ?
+        ''',
+        <Object?>[
+          supplier.name,
+          supplier.logo,
+          supplier.address,
+          supplier.phone,
+          'POINT(${supplier.latitude} ${supplier.longitude})',
+          supplier.category?.id,
+          supplier.id,
+        ],
+      );
+
+      Category? category;
+      final categoryId = supplier.category?.id;
+
+      if (categoryId != null) {
+        final resultCategory = await conn.query(
+          'SELECT * FROM categorias_fornecedor WHERE id = ?',
+          [categoryId],
+        );
+
+        var categoryData = resultCategory.first;
+        category = Category(
+          id: categoryData['id'],
+          name: categoryData['nome_categoria'],
+          type: categoryData['tipo_categoria'],
+        );
+      }
+
+      return supplier.copyWith(category: category);
+    } on MySqlException catch (e, s) {
+      log.error('Error when updating supplier data', e, s);
       throw DatabaseException();
     } finally {
       await conn?.close();

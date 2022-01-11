@@ -68,8 +68,8 @@ class UserRepository implements IUserRepository {
       conn = await connection.openConnection();
       var query = '''
         SELECT * 
-        FROM usuario
-        WHERE email = ? AND senha = ?
+        FROM usuario 
+        WHERE email = ? AND senha = ? 
       ''';
 
       if (supplierUser) {
@@ -82,6 +82,8 @@ class UserRepository implements IUserRepository {
         email,
         CryptHelper.generateSha256Hash(password),
       ]);
+
+      log.debug(CryptHelper.generateSha256Hash(password));
 
       if (result.isEmpty) {
         log.error('Invalid e-mail or password');
