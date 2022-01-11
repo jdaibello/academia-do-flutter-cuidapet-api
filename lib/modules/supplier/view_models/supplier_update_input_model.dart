@@ -21,8 +21,8 @@ class SupplierUpdateInputModel extends IRequestMapping {
     logo = data['logo'];
     address = data['address'];
     phone = data['phone'];
-    longitude = data['longitude'];
-    latitude = data['latitude'];
+    latitude = data['lat'];
+    longitude = data['lng'];
     categoryId = data['category'];
   }
 }
