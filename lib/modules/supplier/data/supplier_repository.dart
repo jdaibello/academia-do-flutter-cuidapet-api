@@ -175,7 +175,7 @@ class SupplierRepository implements ISupplierRepository {
         '''
           INSERT INTO fornecedor(nome, logo, endereco, telefone, latlng, categorias_fornecedor_id) VALUES (?, ?, ?, ?, ST_geomfromText(?), ?)
         ''',
-        <Object?>[
+        [
           supplier.name,
           supplier.logo,
           supplier.address,
@@ -185,7 +185,7 @@ class SupplierRepository implements ISupplierRepository {
         ],
       );
 
-      return result.insertId!;
+      return result.insertId ?? 0;
     } on MySqlException catch (e, s) {
       log.error('Error when registering a new user', e, s);
       throw DatabaseException();
@@ -214,7 +214,7 @@ class SupplierRepository implements ISupplierRepository {
           WHERE 
             id = ?
         ''',
-        <Object?>[
+        [
           supplier.name,
           supplier.logo,
           supplier.address,
