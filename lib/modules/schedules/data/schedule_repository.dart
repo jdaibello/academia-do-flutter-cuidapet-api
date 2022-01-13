@@ -100,20 +100,20 @@ class ScheduleRepository implements IScheduleRepository {
 
       final query =
           '''
-        SELECT 
-          a.id, 
-          a.data_agendamento, 
-          a.status, 
-          a.nome, 
-          a.nome_pet, 
-          f.id AS fornec_id, 
-          f.nome AS fornec_nome, 
-          f.logo 
-        FROM agendamento AS a 
-        INNER JOIN fornecedor AS f ON f.id = a.fornecedor_id 
-        WHERE a.usuario_id = ? 
-        ORDER BY a.data_agendamento DESC
-      ''';
+            SELECT 
+              a.id, 
+              a.data_agendamento, 
+              a.status, 
+              a.nome, 
+              a.nome_pet, 
+              f.id AS fornec_id, 
+              f.nome AS fornec_nome, 
+              f.logo 
+            FROM agendamento AS a 
+            INNER JOIN fornecedor AS f ON f.id = a.fornecedor_id 
+            WHERE a.usuario_id = ? 
+            ORDER BY a.data_agendamento DESC
+          ''';
 
       final result = await conn.query(query, [userId]);
 
@@ -139,6 +139,61 @@ class ScheduleRepository implements IScheduleRepository {
       return Future.wait(scheduleResultFuture);
     } on MySqlException catch (e, s) {
       log.error('Error when finding user schedules', e, s);
+      throw DatabaseException();
+    } finally {
+      await conn?.close();
+    }
+  }
+
+  @override
+  Future<List<Schedule>> findAllSchedulesByUserSupplier(int userId) async {
+    MySqlConnection? conn;
+
+    try {
+      conn = await connection.openConnection();
+
+      final query =
+          '''
+            SELECT 
+              a.id, 
+              a.data_agendamento, 
+              a.status, 
+              a.nome, 
+              a.nome_pet, 
+              f.id AS fornec_id, 
+              f.nome AS fornec_nome, 
+              f.logo 
+            FROM agendamento AS a 
+            INNER JOIN fornecedor AS f ON f.id = a.fornecedor_id 
+            INNER JOIN usuario AS u ON u.fornecedor_id = f.id
+            WHERE u.id = ? 
+            ORDER BY a.data_agendamento DESC
+          ''';
+
+      final result = await conn.query(query, [userId]);
+
+      final scheduleResultFuture = result
+          .map(
+            (s) async => Schedule(
+              id: s['id'],
+              scheduleDate: s['data_agendamento'],
+              status: s['status'],
+              name: s['nome'],
+              petName: s['nome_pet'],
+              userId: userId,
+              supplier: Supplier(
+                id: s['fornec_id'],
+                logo: (s['logo'] as Blob?).toString(),
+                name: s['fornec_nome'],
+              ),
+              services: await _findAllServicesBySchedule(s['id']),
+            ),
+          )
+          .toList();
+
+      return Future.wait(scheduleResultFuture);
+    } on MySqlException catch (e, s) {
+      log.error('Error when finding supplier schedules', e, s);
       throw DatabaseException();
     } finally {
       await conn?.close();

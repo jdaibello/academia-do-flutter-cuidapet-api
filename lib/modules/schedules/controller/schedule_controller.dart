@@ -87,5 +87,45 @@ class ScheduleController {
     }
   }
 
+  @Route.get('/supplier')
+  Future<Response> findAllSchedulesBySupplier(Request request) async {
+    final userId = int.parse(request.headers['user']!);
+
+    try {
+      final result = await service.findAllSchedulesByUserSupplier(userId);
+
+      final response = result
+          .map((s) => {
+                'id': s.id,
+                'schedule_date': s.scheduleDate.toIso8601String(),
+                'status': s.status,
+                'name': s.name,
+                'pet_name': s.petName,
+                'supplier': {
+                  'id': s.supplier.id,
+                  'name': s.supplier.name,
+                  'logo': s.supplier.logo,
+                },
+                'service': s.services
+                    .map((s) => {
+                          'id': s.service.id,
+                          'name': s.service.name,
+                          'price': s.service.price,
+                        })
+                    .toList(),
+              })
+          .toList();
+
+      return Response.ok(jsonEncode(response));
+    } catch (e, s) {
+      log.error(
+        'Error when finding schedules from supplier user [$userId]',
+        e,
+        s,
+      );
+      return Response.internalServerError();
+    }
+  }
+
   Router get router => _$ScheduleControllerRouter(this);
 }
