@@ -1,1 +1,3 @@
-abstract class IChatService {}
+abstract class IChatService {
+  Future<int> startChat(int scheduleId);
+}
