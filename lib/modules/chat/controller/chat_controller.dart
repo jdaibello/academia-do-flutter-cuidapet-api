@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:cuidapet_api/application/logger/i_logger.dart';
 import 'package:cuidapet_api/modules/chat/service/i_chat_service.dart';
+import 'package:cuidapet_api/modules/chat/view_models/chat_notify_view_model.dart';
 import 'package:injectable/injectable.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
@@ -28,6 +29,21 @@ class ChatController {
     } catch (e, s) {
       log.error('Error when starting chat', e, s);
       return Response.internalServerError();
+    }
+  }
+
+  @Route.post('/notify')
+  Future<Response> notifyUser(Request request) async {
+    try {
+      final model = ChatNotifyViewModel(await request.readAsString());
+      await service.notifyChat(model);
+      return Response.ok(jsonEncode({}));
+    } catch (e) {
+      return Response.internalServerError(
+        body: jsonEncode(
+          {'message': 'Error when sending notification'},
+        ),
+      );
     }
   }
 
