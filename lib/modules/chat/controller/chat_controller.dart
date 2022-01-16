@@ -78,19 +78,20 @@ class ChatController {
 
   @Route.get('/supplier')
   Future<Response> findChatsBySupplier(Request request) async {
+    final supplier = request.headers['supplier'];
+
+    if (supplier == null) {
+      return Response(
+        400,
+        body: jsonEncode(
+          {'message': 'Logged in user is not a supplier'},
+        ),
+      );
+    }
+
+    final supplierId = int.parse(supplier);
+
     try {
-      final supplier = request.headers['supplier'];
-
-      if (supplier == null) {
-        return Response(
-          400,
-          body: jsonEncode(
-            {'message': 'Logged in user is not a supplier'},
-          ),
-        );
-      }
-
-      final supplierId = int.parse(supplier);
       final chats = await service.getChatsBySupplier(supplierId);
 
       final resultChats = chats
@@ -111,7 +112,19 @@ class ChatController {
 
       return Response.ok(jsonEncode(resultChats));
     } catch (e, s) {
-      log.error('Error when finding chats from supplier', e, s);
+      log.error('Error when finding chats from supplier $supplierId', e, s);
+      return Response.internalServerError();
+    }
+  }
+
+  @Route.put('/<chatId>/end-chat')
+  Future<Response> endChat(Request request, String chatId) async {
+    try {
+      await service.endChat(int.parse(chatId));
+
+      return Response.ok(jsonEncode({}));
+    } catch (e, s) {
+      log.error('Error when finishing the chat $chatId', e, s);
       return Response.internalServerError();
     }
   }
