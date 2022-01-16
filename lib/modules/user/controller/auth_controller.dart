@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:cuidapet_api/application/exceptions/request_validation_exception.dart';
 import 'package:cuidapet_api/application/exceptions/user_exists_exception.dart';
 import 'package:cuidapet_api/application/exceptions/user_not_found_exception.dart';
 import 'package:cuidapet_api/application/helpers/jwt_helper.dart';
@@ -32,18 +33,22 @@ class AuthController {
       User user;
 
       if (!loginViewModel.socialLogin) {
+        loginViewModel.loginEmailValidate();
+
         user = await userService.loginWithEmailAndPassword(
           loginViewModel.login,
-          loginViewModel.password,
+          loginViewModel.password!,
           loginViewModel.supplierUser,
         );
       } else {
+        loginViewModel.loginSocialValidate();
+
         // Social login (Facebook, Google, Apple, etc...)
         user = await userService.loginWithSocial(
           loginViewModel.login,
           loginViewModel.avatar,
-          loginViewModel.socialType,
-          loginViewModel.socialKey,
+          loginViewModel.socialType!,
+          loginViewModel.socialKey!,
         );
       }
 
@@ -58,6 +63,9 @@ class AuthController {
           {'message': 'Invalid user or password'},
         ),
       );
+    } on RequestValidationException catch (e, s) {
+      log.error('Required parameters not sent error', e, s);
+      return Response(400, body: jsonEncode(e.errors));
     } catch (e, s) {
       log.error('Error when logging in', e, s);
       return Response.forbidden(
@@ -94,29 +102,41 @@ class AuthController {
 
   @Route('PATCH', '/confirm')
   Future<Response> confirmLogin(Request request) async {
-    final user = int.parse(request.headers['user']!);
-    final supplier = int.tryParse(request.headers['supplier'] ?? '');
-    final token = JwtHelper.generateJWT(user, supplier).replaceAll(
-      'Bearer ',
-      '',
-    );
+    try {
+      final user = int.parse(request.headers['user']!);
+      final supplier = int.tryParse(request.headers['supplier'] ?? '');
+      final token = JwtHelper.generateJWT(user, supplier).replaceAll(
+        'Bearer ',
+        '',
+      );
 
-    final inputModel = UserConfirmInputModel(
-      userId: user,
-      accessToken: token,
-      data: await request.readAsString(),
-    );
+      final inputModel = UserConfirmInputModel(
+        userId: user,
+        accessToken: token,
+        data: await request.readAsString(),
+      );
 
-    final refreshToken = await userService.confirmLogin(inputModel);
+      inputModel.validateRequest();
+      final refreshToken = await userService.confirmLogin(inputModel);
 
-    return Response.ok(
-      jsonEncode(
-        {
-          'access_token': 'Bearer $token',
-          'refresh_token': refreshToken,
-        },
-      ),
-    );
+      return Response.ok(
+        jsonEncode(
+          {
+            'access_token': 'Bearer $token',
+            'refresh_token': refreshToken,
+          },
+        ),
+      );
+    } on RequestValidationException catch (e, s) {
+      log.error('Required parameters not sent error', e, s);
+      return Response(
+        400,
+        body: jsonEncode(e.errors),
+      );
+    } catch (e, s) {
+      log.error('Error when confirming login', e, s);
+      return Response.internalServerError();
+    }
   }
 
   @Route.put('/refresh')
