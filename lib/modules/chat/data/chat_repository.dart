@@ -132,10 +132,7 @@ class ChatRepository implements IChatRepository {
             ORDER BY c.data_criacao
           ''';
 
-      final result = await conn.query(
-        query,
-        [userId],
-      );
+      final result = await conn.query(query, [userId]);
 
       return result
           .map(
@@ -155,6 +152,52 @@ class ChatRepository implements IChatRepository {
           .toList();
     } on MySqlException catch (e, s) {
       log.error('Error when finding chats from a user', e, s);
+      throw DatabaseException();
+    } finally {
+      await conn?.close();
+    }
+  }
+
+  @override
+  Future<List<Chat>> getChatsBySupplier(int supplierId) async {
+    MySqlConnection? conn;
+
+    try {
+      conn = await connection.openConnection();
+
+      final query =
+          '''
+            SELECT 
+              c.id, c.data_criacao, c.status, 
+              a.nome, a.nome_pet, a.fornecedor_id, a.usuario_id, 
+              f.nome as fornec_nome, f.logo
+            FROM chats AS c 
+            INNER JOIN agendamento a ON a.id = c.agendamento_id 
+            INNER JOIN fornecedor f ON f.id = a.fornecedor_id 
+            WHERE a.fornecedor_id = ? AND c.status = 'A' 
+            ORDER BY c.data_criacao
+          ''';
+
+      final result = await conn.query(query, [supplierId]);
+
+      return result
+          .map(
+            (c) => Chat(
+              id: c['id'],
+              userId: c['usuario_id'],
+              supplier: Supplier(
+                id: c['fornecedor_id'],
+                name: c['fornec_nome'],
+                logo: (c['logo'] as Blob?)?.toString(),
+              ),
+              name: c['nome'],
+              petName: c['nome_pet'],
+              status: c['status'],
+            ),
+          )
+          .toList();
+    } on MySqlException catch (e, s) {
+      log.error('Error when finding chats from a supplier', e, s);
       throw DatabaseException();
     } finally {
       await conn?.close();

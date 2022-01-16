@@ -38,6 +38,10 @@ class ChatService implements IChatService {
   Future<List<Chat>> getChatsByUser(int userId) =>
       repository.getChatsByUser(userId);
 
+  @override
+  Future<List<Chat>> getChatsBySupplier(int supplierId) =>
+      repository.getChatsBySupplier(supplierId);
+
   void _notifyUser(
     List<String?>? tokens,
     ChatNotifyViewModel model,
