@@ -1,9 +1,12 @@
 import 'dart:convert';
 
+import 'package:cuidapet_api/application/exceptions/database_exception.dart';
+import 'package:cuidapet_api/application/exceptions/user_exists_exception.dart';
 import 'package:cuidapet_api/application/exceptions/user_not_found_exception.dart';
 import 'package:cuidapet_api/application/logger/i_logger.dart';
 import 'package:cuidapet_api/entities/user.dart';
 import 'package:cuidapet_api/modules/user/data/user_repository.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
 import '../../../core/fixture/fixture_reader.dart';
@@ -13,10 +16,12 @@ import '../../../core/mysql/mysql_mocks.dart';
 void main() {
   late MockDatabaseConnection database;
   late ILogger log;
+  late UserRepository userRepository;
 
   setUp(() {
     database = MockDatabaseConnection();
     log = MockLogger();
+    userRepository = UserRepository(connection: database, log: log);
   });
 
   group('Group test findById', () {
@@ -33,8 +38,6 @@ void main() {
         'refresh_token',
         'img_avatar',
       ]);
-
-      final userRepository = UserRepository(connection: database, log: log);
 
       database.mockQuery(mockResults);
 
@@ -94,6 +97,61 @@ void main() {
 
       //Assert
       database.verifyConnectionClose();
+    });
+  });
+
+  group('Group test create user', () {
+    test('should create user successfully', () async {
+      // Arrange
+      final userId = 1;
+      final mockResults = MockResults();
+      when(() => mockResults.insertId).thenReturn(userId);
+      database.mockQuery(mockResults);
+
+      final userInsert = User(
+        email: 'joao.pedro@gmail.com',
+        registerType: 'APP',
+        imageAvatar: '',
+        password: '123123',
+      );
+
+      final userExpected = User(
+        id: userId,
+        email: 'joao.pedro@gmail.com',
+        registerType: 'APP',
+        imageAvatar: '',
+        password: '',
+      );
+
+      // Act
+      final user = await userRepository.createUser(userInsert);
+
+      // Assert
+      expect(user, userExpected);
+    });
+
+    test('should throw DatabaseException', () async {
+      // Arrange
+      database.mockQueryException();
+
+      // Act
+      var call = userRepository.createUser;
+
+      // Assert
+      expect(() => call(User()), throwsA(isA<DatabaseException>()));
+    });
+
+    test('should throw UserExistsException', () async {
+      // Arrange
+      final exception = MockMysqlException();
+      when(() => exception.message).thenReturn('usuario.email_UNIQUE');
+      database.mockQueryException(exception);
+
+      // Act
+      var call = userRepository.createUser;
+
+      // Assert
+      expect(() => call(User()), throwsA(isA<UserExistsException>()));
     });
   });
 }
