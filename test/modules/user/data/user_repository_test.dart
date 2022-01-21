@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:cuidapet_api/application/exceptions/database_exception.dart';
 import 'package:cuidapet_api/application/exceptions/user_exists_exception.dart';
 import 'package:cuidapet_api/application/exceptions/user_not_found_exception.dart';
+import 'package:cuidapet_api/application/helpers/crypt_helper.dart';
 import 'package:cuidapet_api/application/logger/i_logger.dart';
 import 'package:cuidapet_api/entities/user.dart';
 import 'package:cuidapet_api/modules/user/data/user_repository.dart';
@@ -74,7 +75,7 @@ void main() {
 
       //Assert
       expect(() => call(id), throwsA(isA<UserNotFoundException>()));
-      await Future.delayed(Duration(seconds: 1));
+      await Future.delayed(Duration(milliseconds: 200));
       database.verifyConnectionClose();
     });
 
@@ -128,6 +129,7 @@ void main() {
 
       // Assert
       expect(user, userExpected);
+      database.verifyConnectionClose();
     });
 
     test('should throw DatabaseException', () async {
@@ -139,19 +141,124 @@ void main() {
 
       // Assert
       expect(() => call(User()), throwsA(isA<DatabaseException>()));
+      await Future.delayed(Duration(milliseconds: 200));
+      database.verifyConnectionClose();
     });
 
     test('should throw UserExistsException', () async {
       // Arrange
       final exception = MockMysqlException();
       when(() => exception.message).thenReturn('usuario.email_UNIQUE');
-      database.mockQueryException(exception);
+      database.mockQueryException(mockException: exception);
 
       // Act
       var call = userRepository.createUser;
 
       // Assert
       expect(() => call(User()), throwsA(isA<UserExistsException>()));
+      await Future.delayed(Duration(milliseconds: 200));
+      database.verifyConnectionClose();
+    });
+  });
+
+  group('Group test login with email and password', () {
+    test('should login with email and password', () async {
+      //Arrange
+      final userFixtureDB = FixtureReader.getJsonData(
+        'modules/user/data/fixture/login_with_email_and_password_successfully.json',
+      );
+
+      final mockResults = MockResults(userFixtureDB, [
+        'ios_token',
+        'android_token',
+        'refresh_token',
+        'img_avatar',
+      ]);
+
+      final email = 'joao.pedro@gmail.com';
+      final password = '123123';
+
+      database.mockQuery(
+        mockResults,
+        [
+          email,
+          CryptHelper.generateSha256Hash(password),
+        ],
+      );
+
+      final userMap = jsonDecode(userFixtureDB);
+      final userExpected = User(
+        id: userMap['id'],
+        email: userMap['email'],
+        registerType: userMap['tipo_cadastro'],
+        iosToken: userMap['ios_token'],
+        androidToken: userMap['android_token'],
+        refreshToken: userMap['refresh_token'],
+        imageAvatar: userMap['img_avatar'],
+        supplierId: userMap['fornecedor_id'],
+      );
+
+      //Act
+      final user = await userRepository.loginWithEmailAndPassword(
+        email,
+        password,
+        false,
+      );
+
+      //Assert
+      expect(user, userExpected);
+      database.verifyConnectionClose();
+    });
+
+    test(
+        'should login with email and password and return exception UserNotFoundExpection',
+        () async {
+      //Arrange
+      final mockResults = MockResults();
+
+      final email = 'joao.pedro@gmail.com';
+      final password = '123123';
+
+      database.mockQuery(
+        mockResults,
+        [
+          email,
+          CryptHelper.generateSha256Hash(password),
+        ],
+      );
+
+      //Act
+      final call = userRepository.loginWithEmailAndPassword;
+
+      //Assert
+      expect(() => call(email, password, false),
+          throwsA(isA<UserNotFoundException>()));
+
+      await Future.delayed(Duration(milliseconds: 200));
+      database.verifyConnectionClose();
+    });
+
+    test(
+        'should login with email and password and return exception DatabaseException',
+        () async {
+      //Arrange
+      final email = 'joao.pedro@gmail.com';
+      final password = '123123';
+
+      database.mockQueryException(params: [
+        email,
+        CryptHelper.generateSha256Hash(password),
+      ]);
+
+      //Act
+      final call = userRepository.loginWithEmailAndPassword;
+
+      //Assert
+      expect(() => call(email, password, false),
+          throwsA(isA<DatabaseException>()));
+
+      await Future.delayed(Duration(milliseconds: 200));
+      database.verifyConnectionClose();
     });
   });
 }
