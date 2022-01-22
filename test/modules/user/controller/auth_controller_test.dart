@@ -123,4 +123,75 @@ void main() {
           () => userService.loginWithSocial(any(), any(), any(), any()));
     });
   });
+
+  group('Group test login social', () {
+    test('should login with social successfully', () async {
+      // Arrange
+      final requestFixture = FixtureReader.getJsonData(
+        'modules/user/controller/fixture/user_login_with_email_and_social_request.json',
+      );
+
+      final requestData = jsonDecode(requestFixture);
+      final login = requestData['login'];
+      final avatar = requestData['avatar'];
+      final socialType = requestData['social_type'];
+      final socialKey = requestData['social_key'];
+
+      when(() => request.readAsString())
+          .thenAnswer((_) async => requestFixture);
+
+      when(() => userService.loginWithSocial(
+            login,
+            avatar,
+            socialType,
+            socialKey,
+          )).thenAnswer((_) async => User(
+            id: 1,
+            email: login,
+            imageAvatar: avatar,
+            registerType: socialType,
+            socialKey: socialKey,
+          ));
+
+      // Act
+      final response = await authController.login(request);
+
+      // Assert
+      final responseData = jsonDecode(await response.readAsString());
+      expect(response.statusCode, 200);
+      expect(responseData['access_token'], isNotEmpty);
+      verify(() => userService.loginWithSocial(
+            login,
+            avatar,
+            socialType,
+            socialKey,
+          )).called(1);
+      verifyNever(
+          () => userService.loginWithEmailAndPassword(any(), any(), any()));
+    });
+
+    test('should return request request validation exception on login social',
+        () async {
+      // Arrange
+      final requestFixture = FixtureReader.getJsonData(
+        'modules/user/controller/fixture/user_login_with_email_and_social_request_validation_error.json',
+      );
+
+      when(() => request.readAsString())
+          .thenAnswer((_) async => requestFixture);
+
+      // Act
+      final response = await authController.login(request);
+
+      // Assert
+      final responseData = jsonDecode(await response.readAsString());
+      expect(response.statusCode, 400);
+      expect(responseData['social_type'], 'required');
+      expect(responseData['social_key'], 'required');
+      verifyNever(
+          () => userService.loginWithSocial(any(), any(), any(), any()));
+      verifyNever(
+          () => userService.loginWithEmailAndPassword(any(), any(), any()));
+    });
+  });
 }
