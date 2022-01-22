@@ -20,10 +20,11 @@ void main() {
     userRepository = MockUserRepository();
     log = MockLogger();
     userService = UserService(userRepository: userRepository, log: log);
+    registerFallbackValue(User());
   });
 
   group('Group test login with email and password', () {
-    test('should login with email and password', () async {
+    test('should login with email and password successfully', () async {
       // Arrange
       final id = 1;
       final email = 'joao.pedro@gmail.com';
@@ -68,11 +69,7 @@ void main() {
           password,
           supplierUser,
         ),
-      ).thenThrow(
-        UserNotFoundException(
-          message: 'Invalid e-mail or password',
-        ),
-      );
+      ).thenThrow(UserNotFoundException(message: 'User not found'));
 
       // Act
       final call = userService.loginWithEmailAndPassword;
@@ -82,6 +79,85 @@ void main() {
           throwsA(isA<UserNotFoundException>()));
       verify(() => userRepository.loginWithEmailAndPassword(
           email, password, supplierUser)).called(1);
+    });
+  });
+
+  group('Group test login with social', () {
+    test('should login with social successfully', () async {
+      // Arrange
+      final id = 1;
+      final email = 'joao.pedro@gmail.com';
+      final socialKey = 'G123';
+      final socialType = 'GOOGLE';
+
+      final userReturnLogin = User(
+        id: id,
+        email: email,
+        socialKey: socialKey,
+        registerType: socialType,
+      );
+
+      when(
+        () => userRepository.loginByEmailAndSocialKey(
+          email,
+          socialKey,
+          socialType,
+        ),
+      ).thenAnswer((_) async => userReturnLogin);
+
+      // Act
+      final user = await userService.loginWithSocial(
+        email,
+        '',
+        socialType,
+        socialKey,
+      );
+
+      // Assert
+      expect(user, userReturnLogin);
+      verify(() => userRepository.loginByEmailAndSocialKey(
+          email, socialKey, socialType)).called(1);
+    });
+
+    test('should login with social with user not found and create a new user',
+        () async {
+      // Arrange
+      final id = 1;
+      final email = 'joao.pedro@gmail.com';
+      final socialKey = 'G123';
+      final socialType = 'GOOGLE';
+
+      final userCreated = User(
+        id: id,
+        email: email,
+        socialKey: socialKey,
+        registerType: socialType,
+      );
+
+      when(
+        () => userRepository.loginByEmailAndSocialKey(
+          email,
+          socialKey,
+          socialType,
+        ),
+      ).thenThrow(UserNotFoundException(message: 'User not found'));
+
+      when(() => userRepository.createUser(any<User>()))
+          .thenAnswer((_) async => userCreated);
+
+      // Act
+      final user = await userService.loginWithSocial(
+        email,
+        '',
+        socialType,
+        socialKey,
+      );
+
+      // Assert
+      expect(user, userCreated);
+      verify(() => userRepository.loginByEmailAndSocialKey(
+          email, socialKey, socialType)).called(1);
+      verify(() => userRepository.createUser(any<User>())).called(1);
     });
   });
 }
