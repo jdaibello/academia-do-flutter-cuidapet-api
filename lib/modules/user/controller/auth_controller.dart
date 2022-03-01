@@ -159,7 +159,7 @@ class AuthController {
         jsonEncode(
           {
             'access_token': userRefreshToken.accessToken,
-            'refreshToken': userRefreshToken.refreshToken,
+            'refresh_token': userRefreshToken.refreshToken,
           },
         ),
       );
