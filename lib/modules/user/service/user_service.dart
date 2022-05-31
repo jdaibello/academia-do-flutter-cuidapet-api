@@ -89,7 +89,7 @@ class UserService implements IUserService {
     _validateRefreshToken(model);
     final newAccessToken = JwtHelper.generateJWT(model.user, model.supplier);
     final newRefreshToken = JwtHelper.refreshToken(
-      newAccessToken.replaceAll('Bearer', ''),
+      newAccessToken.replaceAll('Bearer ', ''),
     );
 
     final user = User(
