@@ -15,4 +15,4 @@ services:
       - MYSQL_DATABASE=cuidapet_db
       - MYSQL_ROOT_PASSWORD=cuidapet
     volumes:
-      - /mysql_data:/var/lib/mysql
+      - ./mysql_data:/var/lib/mysql
